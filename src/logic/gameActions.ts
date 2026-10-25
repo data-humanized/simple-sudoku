@@ -211,29 +211,15 @@ export function applyHintFillNumber(
   state: GameState,
   selectedPos: CellPosition | null
 ): { state: GameState; targetPos: CellPosition | null } {
-  if (state.isCompleted) return { state, targetPos: null };
+  if (state.isCompleted || !selectedPos) return { state, targetPos: null };
 
-  let targetR = -1;
-  let targetC = -1;
+  const targetR = selectedPos.row;
+  const targetC = selectedPos.col;
 
-  if (selectedPos && state.currentGrid[selectedPos.row][selectedPos.col] === 0) {
-    targetR = selectedPos.row;
-    targetC = selectedPos.col;
-  } else {
-    // Find first empty cell
-    for (let r = 0; r < 9; r++) {
-      for (let c = 0; c < 9; c++) {
-        if (state.currentGrid[r][c] === 0) {
-          targetR = r;
-          targetC = c;
-          break;
-        }
-      }
-      if (targetR !== -1) break;
-    }
+  // Act ONLY on the selected cell if not given and currently empty
+  if (isGivenCell(state, targetR, targetC) || state.currentGrid[targetR][targetC] !== 0) {
+    return { state, targetPos: null };
   }
-
-  if (targetR === -1) return { state, targetPos: null };
 
   const correctNum = state.solution[targetR][targetC];
   const prevValue = state.currentGrid[targetR][targetC];
@@ -311,16 +297,15 @@ export function applyHintFillCandidates(
   state: GameState,
   selectedPos: CellPosition | null
 ): GameState {
-  if (state.isCompleted) return state;
+  if (state.isCompleted || !selectedPos) return state;
 
-  const changes: {
-    row: number;
-    col: number;
-    prevNotes: number[];
-    nextNotes: number[];
-  }[] = [];
+  const targetR = selectedPos.row;
+  const targetC = selectedPos.col;
 
-  const nextNotes = state.notes.map(r => r.map(c => [...c]));
+  // Act ONLY on the selected cell if not given and currently empty
+  if (isGivenCell(state, targetR, targetC) || state.currentGrid[targetR][targetC] !== 0) {
+    return state;
+  }
 
   // Construct sanitized grid that only contains given or correct numbers
   // Wrong entries must not be used when calculating pencil candidates!
@@ -333,40 +318,22 @@ export function applyHintFillCandidates(
     }
   }
 
-  if (selectedPos && state.currentGrid[selectedPos.row][selectedPos.col] === 0) {
-    const r = selectedPos.row;
-    const c = selectedPos.col;
-    const candidates = getCandidates(sanitizedGrid, r, c);
-    changes.push({
-      row: r,
-      col: c,
-      prevNotes: [...nextNotes[r][c]],
-      nextNotes: [...candidates],
-    });
-    nextNotes[r][c] = [...candidates];
-  } else {
-    // Fill all empty cells
-    for (let r = 0; r < 9; r++) {
-      for (let c = 0; c < 9; c++) {
-        if (state.currentGrid[r][c] === 0) {
-          const candidates = getCandidates(sanitizedGrid, r, c);
-          changes.push({
-            row: r,
-            col: c,
-            prevNotes: [...nextNotes[r][c]],
-            nextNotes: [...candidates],
-          });
-          nextNotes[r][c] = [...candidates];
-        }
-      }
-    }
-  }
-
-  if (changes.length === 0) return state;
+  const candidates = getCandidates(sanitizedGrid, targetR, targetC);
+  const prevNotes = [...state.notes[targetR][targetC]];
+  const nextNotes = state.notes.map((rArr, rIdx) =>
+    rArr.map((cArr, cIdx) => (rIdx === targetR && cIdx === targetC ? [...candidates] : [...cArr]))
+  );
 
   const action: MoveAction = {
     type: 'FILL_CANDIDATES',
-    changes,
+    changes: [
+      {
+        row: targetR,
+        col: targetC,
+        prevNotes,
+        nextNotes: [...candidates],
+      },
+    ],
   };
 
   return {

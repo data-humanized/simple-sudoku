@@ -48,9 +48,36 @@ export const GameView: React.FC<GameViewProps> = ({
   const [isPencilMode, setIsPencilMode] = useState<boolean>(false);
   const [showHintMenu, setShowHintMenu] = useState<boolean>(false);
   const [shakingCell, setShakingCell] = useState<CellPosition | null>(null);
+  const [hintTooltip, setHintTooltip] = useState<{ row: number; col: number; message: string } | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const hintMenuRef = useRef<HTMLDivElement>(null);
+  const tooltipTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const isOutOfLives = gameState.mistakes >= 3;
+
+  const showCellTooltip = useCallback((row: number, col: number, message: string) => {
+    if (tooltipTimerRef.current) clearTimeout(tooltipTimerRef.current);
+    setToastMessage(null);
+    setHintTooltip({ row, col, message });
+    tooltipTimerRef.current = setTimeout(() => {
+      setHintTooltip(null);
+    }, 2000);
+  }, []);
+
+  const showToast = useCallback((message: string) => {
+    if (tooltipTimerRef.current) clearTimeout(tooltipTimerRef.current);
+    setHintTooltip(null);
+    setToastMessage(message);
+    tooltipTimerRef.current = setTimeout(() => {
+      setToastMessage(null);
+    }, 2000);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (tooltipTimerRef.current) clearTimeout(tooltipTimerRef.current);
+    };
+  }, []);
 
   // Timer interval
   useEffect(() => {
@@ -209,6 +236,22 @@ export const GameView: React.FC<GameViewProps> = ({
     setShowHintMenu(false);
     if (gameState.isPaused || gameState.isCompleted || isOutOfLives) return;
 
+    if (!selectedCell) {
+      showToast('Select a cell first');
+      return;
+    }
+
+    const { row, col } = selectedCell;
+    if (isGivenCell(gameState, row, col)) {
+      showCellTooltip(row, col, "Can't fill pre-filled box");
+      return;
+    }
+
+    if (gameState.currentGrid[row][col] !== 0) {
+      showCellTooltip(row, col, 'Block already filled');
+      return;
+    }
+
     const { state: nextState, targetPos } = applyHintFillNumber(gameState, selectedCell);
     if (targetPos) {
       setSelectedCell(targetPos);
@@ -216,17 +259,33 @@ export const GameView: React.FC<GameViewProps> = ({
     audio.playHint(settings.soundEffects);
     triggerHaptic(settings.hapticFeedback, 'medium');
     onUpdateState(nextState);
-  }, [gameState, selectedCell, isOutOfLives, settings, onUpdateState]);
+  }, [gameState, selectedCell, isOutOfLives, settings, showToast, showCellTooltip, onUpdateState]);
 
   const handleHintFillCandidates = useCallback(() => {
     setShowHintMenu(false);
     if (gameState.isPaused || gameState.isCompleted || isOutOfLives) return;
 
+    if (!selectedCell) {
+      showToast('Select a cell first');
+      return;
+    }
+
+    const { row, col } = selectedCell;
+    if (isGivenCell(gameState, row, col)) {
+      showCellTooltip(row, col, "Can't fill pre-filled box");
+      return;
+    }
+
+    if (gameState.currentGrid[row][col] !== 0) {
+      showCellTooltip(row, col, 'Block already filled');
+      return;
+    }
+
     const nextState = applyHintFillCandidates(gameState, selectedCell);
     audio.playHint(settings.soundEffects);
     triggerHaptic(settings.hapticFeedback, 'medium');
     onUpdateState(nextState);
-  }, [gameState, selectedCell, isOutOfLives, settings, onUpdateState]);
+  }, [gameState, selectedCell, isOutOfLives, settings, showToast, showCellTooltip, onUpdateState]);
 
   const togglePause = useCallback(() => {
     if (isOutOfLives) return;
@@ -359,7 +418,20 @@ export const GameView: React.FC<GameViewProps> = ({
   }[settings.fontSize];
 
   return (
-    <div className="w-full max-w-md mx-auto px-2 sm:px-4 py-2 flex flex-col justify-between select-none">
+    <div className="relative w-full max-w-md mx-auto px-2 sm:px-4 py-2 flex flex-col justify-between select-none">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div
+          className="absolute top-12 left-1/2 -translate-x-1/2 z-50 pointer-events-none transition-all"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="bg-stone-900 text-stone-100 dark:bg-stone-100 dark:text-stone-900 text-xs font-medium px-3.5 py-1.5 rounded-full shadow-xl whitespace-nowrap animate-in fade-in duration-150">
+            {toastMessage}
+          </div>
+        </div>
+      )}
+
       {/* Top Header / Bar */}
       <div className="flex items-center justify-between py-2 border-b border-stone-200/60 dark:border-stone-800/60 mb-2 sm:mb-4">
         <button
@@ -398,8 +470,8 @@ export const GameView: React.FC<GameViewProps> = ({
       </div>
 
       {/* 9x9 Board */}
-      <div className="relative w-full aspect-square max-w-[420px] mx-auto bg-stone-900 dark:bg-stone-200 p-[2px] rounded-lg shadow-xs overflow-hidden">
-        <div className="grid grid-cols-9 grid-rows-9 w-full h-full gap-[1px] bg-stone-300 dark:bg-stone-800">
+      <div className="relative w-full aspect-square max-w-[420px] mx-auto bg-stone-900 dark:bg-stone-200 p-[2px] rounded-lg shadow-xs overflow-visible">
+        <div className="grid grid-cols-9 grid-rows-9 w-full h-full gap-[1px] bg-stone-300 dark:bg-stone-800 rounded-md">
           {Array.from({ length: 9 }).map((_, r) =>
             Array.from({ length: 9 }).map((_, c) => {
               const val = gameState.currentGrid[r][c];
@@ -407,6 +479,7 @@ export const GameView: React.FC<GameViewProps> = ({
               const isHinted = gameState.hintedCells[r][c];
               const isSelected = selectedCell?.row === r && selectedCell?.col === c;
               const isCellShaking = shakingCell?.row === r && shakingCell?.col === c;
+              const isTooltipCell = hintTooltip?.row === r && hintTooltip?.col === c;
               const isSameRowColBox =
                 selectedCell &&
                 (selectedCell.row === r ||
@@ -491,11 +564,36 @@ export const GameView: React.FC<GameViewProps> = ({
                   onClick={() => {
                     if (!isOutOfLives) {
                       setSelectedCell({ row: r, col: c });
+                      setHintTooltip(null);
+                      setToastMessage(null);
                     }
                   }}
                   className={`relative flex items-center justify-center p-0 ${borderRight} ${borderBottom} ${bgClass} ${shakeClass} focus:outline-none transition-colors duration-75`}
                   aria-label={`Row ${r + 1}, Column ${c + 1}: ${val !== 0 ? val : 'empty'}`}
                 >
+                  {/* Tooltip bubble placed right beside selected cell */}
+                  {isTooltipCell && hintTooltip && (
+                    <div
+                      className={`absolute ${
+                        c >= 5 ? 'right-full mr-2' : 'left-full ml-2'
+                      } top-1/2 -translate-y-1/2 z-50 pointer-events-none flex items-center`}
+                      role="status"
+                      aria-live="polite"
+                    >
+                      <div className="relative bg-stone-900 text-stone-100 dark:bg-stone-100 dark:text-stone-900 text-[11px] font-medium px-2.5 py-1.5 rounded-lg shadow-xl whitespace-nowrap flex items-center">
+                        <span>{hintTooltip.message}</span>
+                        {/* Triangle pointer arrow */}
+                        <div
+                          className={`absolute top-1/2 -translate-y-1/2 w-0 h-0 border-y-4 border-y-transparent ${
+                            c >= 5
+                              ? 'left-full border-l-4 border-l-stone-900 dark:border-l-stone-100'
+                              : 'right-full border-r-4 border-r-stone-900 dark:border-r-stone-100'
+                          }`}
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   {val !== 0 ? (
                     <span className={`${digitSizeClasses} ${textClass} tabular-nums select-none`}>
                       {val}
