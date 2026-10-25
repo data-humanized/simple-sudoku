@@ -1,0 +1,6 @@
+{
+  "name": "ZenSudoku",
+  "description": "Minimalist, distraction-free Sudoku web application with offline PWA support, pure logic engine, and calm daily streaks.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

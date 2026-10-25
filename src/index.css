@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@layer base {
+  /* High contrast theme overrides */
+  html.contrast {
+    color-scheme: dark;
+  }
+  
+  html.contrast body {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+  }
+
+  html.contrast .bg-white,
+  html.contrast .bg-stone-50,
+  html.contrast .bg-stone-100,
+  html.contrast .bg-stone-900,
+  html.contrast .bg-stone-950 {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+  }
+
+  html.contrast button {
+    border-color: #ffffff !important;
+  }
+
+  html.contrast .border-stone-200,
+  html.contrast .border-stone-800 {
+    border-color: #ffffff !important;
+  }
+}
+
+@keyframes sudoku-shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  20%, 60% {
+    transform: translateX(-6px);
+  }
+  40%, 80% {
+    transform: translateX(6px);
+  }
+}
+
+.animate-shake {
+  animation: sudoku-shake 350ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+

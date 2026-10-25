@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="96" fill="#18181b"/>
+  <rect x="72" y="72" width="368" height="368" rx="16" fill="#27272a" stroke="#3f3f46" stroke-width="6"/>
+  <!-- 3x3 grid lines -->
+  <line x1="194.66" y1="72" x2="194.66" y2="440" stroke="#52525b" stroke-width="6"/>
+  <line x1="317.33" y1="72" x2="317.33" y2="440" stroke="#52525b" stroke-width="6"/>
+  <line x1="72" y1="194.66" x2="440" y2="194.66" stroke="#52525b" stroke-width="6"/>
+  <line x1="72" y1="317.33" x2="440" y2="317.33" stroke="#52525b" stroke-width="6"/>
+  <!-- Sub-grid subtle lines -->
+  <line x1="112.88" y1="72" x2="112.88" y2="440" stroke="#3f3f46" stroke-width="2" stroke-dasharray="2,2"/>
+  <line x1="153.77" y1="72" x2="153.77" y2="440" stroke="#3f3f46" stroke-width="2" stroke-dasharray="2,2"/>
+  <line x1="235.55" y1="72" x2="235.55" y2="440" stroke="#3f3f46" stroke-width="2" stroke-dasharray="2,2"/>
+  <line x1="276.44" y1="72" x2="276.44" y2="440" stroke="#3f3f46" stroke-width="2" stroke-dasharray="2,2"/>
+  <line x1="358.22" y1="72" x2="358.22" y2="440" stroke="#3f3f46" stroke-width="2" stroke-dasharray="2,2"/>
+  <line x1="399.11" y1="72" x2="399.11" y2="440" stroke="#3f3f46" stroke-width="2" stroke-dasharray="2,2"/>
+  <!-- Minimalist numbers -->
+  <text x="133.33" y="150" font-family="system-ui, -apple-system, sans-serif" font-size="44" font-weight="700" fill="#e4e4e7" text-anchor="middle">5</text>
+  <text x="256" y="272" font-family="system-ui, -apple-system, sans-serif" font-size="52" font-weight="800" fill="#a1a1aa" text-anchor="middle">9</text>
+  <text x="378.66" y="394" font-family="system-ui, -apple-system, sans-serif" font-size="44" font-weight="700" fill="#e4e4e7" text-anchor="middle">3</text>
+  <text x="378.66" y="150" font-family="system-ui, -apple-system, sans-serif" font-size="40" font-weight="500" fill="#71717a" text-anchor="middle">7</text>
+  <text x="133.33" y="394" font-family="system-ui, -apple-system, sans-serif" font-size="40" font-weight="500" fill="#71717a" text-anchor="middle">1</text>
+</svg>
